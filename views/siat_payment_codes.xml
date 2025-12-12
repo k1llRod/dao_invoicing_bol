@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="siat_payment_codes_form_view" model="ir.ui.view">
+            <field name="name">siat.payment.codes.form</field>
+            <field name="model">siat.payment.codes</field>
+            <field name="arch" type="xml">
+                <form string="Codigo de Metodos de Pago">
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="Codigo Siat"/>
+                            <h1>
+                                <field name="name" placeholder="Código SIAT"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <field name="string_journals_ids"/>
+                        </group>
+                        <group>
+                            <separator string="Diarios de Pago" colspan="4"/>
+                            <field name="journal_ids" colspan="4" nolabel="1">
+                                <tree string="Diarios de Pago">
+                                    <field name="name"/>
+                                    <field name="type" readonly="1"/>
+                                    <field name="gift_card" readonly="1"/>
+                                    <field name="it_card" readonly="1"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="name" readonly="1"/>
+                                        <field name="type" readonly="1"/>
+                                        <field name="gift_card" readonly="1"/>
+                                        <field name="it_card" readonly="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="siat_payment_codes_tree_view" model="ir.ui.view">
+            <field name="name">siat.payment.codes.tree.view</field>
+            <field name="model">siat.payment.codes</field>
+            <field name="arch" type="xml">
+                <tree string="ModelTitle">
+                    <field name="name"/>
+                    <field name="journal_ids"/>
+                    <field name="string_journals_ids"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="siat_payment_codes_act_window" model="ir.actions.act_window">
+            <field name="name">Codigos de Pago SIAT</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">siat.payment.codes</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    There is no examples click here to add new ModelTitle.
+                </p>
+            </field>
+        </record>
+
+        <menuitem id='menu_siat_payment_codes'
+                  action='siat_payment_codes_act_window'
+                  parent='siat_sin_bolivia.menu_siat_menu'/>
+    </data>
+</odoo>

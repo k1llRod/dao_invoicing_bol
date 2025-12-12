@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_siat_payment_codes,access_siat_payment_codes,model_siat_payment_codes,,1,1,1,1

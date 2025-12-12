@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    	<!-- Extension de la templeta  product_template_form_view del modulo product.
+    		<record id="product_template_form_view" model="ir.ui.view"> 
+
+    	Basandonos en el templete de purchases
+    	<record id="view_product_supplier_inherit" model="ir.ui.view">
+            <field name="name">product.template.supplier.form.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <div name="options" position="inside">
+                    <div>
+                        <field name="purchase_ok"/>
+                        <label for="purchase_ok"/>
+                    </div>
+                </div>
+                <field name="uom_po_id" position="after">
+                    <field name="purchase_method" widget="radio" groups="purchase.group_purchase_manager"/>
+                </field>
+            </field>
+        </record>
+
+        <record id="product_template_search_view_purchase" model="ir.ui.view">
+            <field name="name">product.template.search.purchase.form</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_search_view"/>
+            <field name="arch" type="xml">
+                <filter name="filter_to_sell" position="after">
+                   <filter name="filter_to_purchase" string="Can be Purchased" domain="[('purchase_ok', '=', 1)]"/>
+                </filter>
+            </field>
+        </record>
+    	-->
+
+    	<record id="dao_product_template_form_view_inherit" model="ir.ui.view">
+            <field name="name">dao.product.template.common.form.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[@name='options']" position="inside">
+                    <div>
+                        <field name="bol_is_gas"/>
+                        <label for="bol_is_gas"/>
+                    </div>                
+                </xpath>
+                <!-- BASANDONOS EN PURCHASE NATIVO volvemos a mostrar el campo description que se tiene en el model y lo quitaron en el view desde la version 10.
+                -->
+                <field name="description_sale" position="after">
+                    <separator string="General Description" colspan="4"/>
+                    <field name="description" nolabel="1"
+                        placeholder="General Description for the product (materials, import data, etc.)" colspan="4"/>
+                </field>
+            </field>
+        </record>
+
+        <!-- Para poder adicionar el los campos debajo de barcode, se tiene que extender el XML  tanto del template como del producto para que se pueda ver desde inventario como en pos y ventas.-->
+        <!-- product_template -->
+        <record id="dao_product_template_only_form_view_inherit" model="ir.ui.view">        
+            <field name="name">dao.product.template.only.form.view.inherit</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view"/>
+            <field name="arch" type="xml">
+                <field name="barcode" position="after">
+                    <field name="bol_brand" invisible="1"/>
+                    <field name="bol_name_2" invisible="1"/>
+                </field>
+            </field>
+        </record>
+        <!-- product_product -->
+        <record id="dao_product_normal_form_view_inherit" model="ir.ui.view">
+            <field name="name">dao.product.normal.form.view.inherit</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_normal_form_view"/>
+            <field name="arch" type="xml">
+                <field name="barcode" position="after">
+                    <field name="bol_brand" invisible="1"/>
+                    <field name="bol_name_2" invisible="1"/>
+                </field>
+            </field>
+        </record>
+        
+
+        <!-- Extension de la vista del Unit of Measure uom -->
+        <record id="dao_product_uom_form_view_inherit" model="ir.ui.view">
+            <field name="name">dao.product.uom.form.view.inherit</field>
+            <field name="model">product.uom</field>
+            <field name="inherit_id" ref="product.product_uom_form_view"/>
+            <field name="arch" type="xml">
+                <data>
+                    <field name="name" position="after">
+                        <field name="bol_shortcode" />
+                    </field>
+                </data>
+            </field>
+        </record>
+        <!-- FIN de extension product uom view -->
+    </data>
+</openerp>

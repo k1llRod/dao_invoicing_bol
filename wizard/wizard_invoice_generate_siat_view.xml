@@ -1,0 +1,31 @@
+<odoo>
+    <data>
+
+        <record id="wizard_push_siat_invoice_view" model="ir.ui.view">
+            <field name="name">wizard.push.siat.invoice.form</field>
+            <field name="model">wizard.push.siat.invoice</field>
+            <field name="arch" type="xml">
+                <form string="Confirm Draft Invoices">
+                    <p class="oe_grey">
+                        Once open invoices are pushed, you will not be able
+                        to modify them. The invoices will receive unique
+                        SIAT data
+                    </p>
+                    <footer>
+                        <button string="Push Invoices" name="invoice_push" type="object" default_focus="1" class="btn-primary"/>
+
+                        <button string="Cancel" class="btn-default" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <act_window id="action_wizard_push_siat_invoice"
+            multi="True"
+            key2="client_action_multi" name="Push Open Invoices"
+            res_model="wizard.push.siat.invoice" src_model="account.invoice"
+            view_mode="form" target="new" view_type="form"
+        />
+
+    </data>
+</odoo>

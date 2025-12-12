@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- QWeb Reports -->
+        <!-- Copiamos el TAG del report NATIVO  account_invoices para cambiarle el string de Invoices a Receives-->
+        <report 
+            id="dao_account_invoices_bol"
+            model="account.invoice"
+            string="Invoices SIN"
+            report_type="qweb-pdf"
+            name="dao_invoicing_bol.report_invoice_sin"
+            file="dao_invoicing_bol.report_invoice_sin"
+            attachment_use="False"
+            attachment="(object.state in ('paid')) and (object.siat_bol_generated) and ('INV'+(object.number or '').replace('/','')+'.pdf')"
+        />
+
+        <!-- Generar COPIA de la Factura
+        Es muy parecido al de la factura, pero en este caso se genera cada vez, no se usa attachment_use="True"
+        xq no es necesario, pero si el nama llama al reporte que extiende al del invoice para generarlo como copy
+        -->
+<!--        <report -->
+<!--            id="dao_account_invoices_copy_bol"-->
+<!--            model="account.invoice"-->
+<!--            string="Invoices SIN Copy"-->
+<!--            report_type="qweb-pdf"-->
+<!--            name="dao_invoicing_bol.report_invoice_copy_sin"-->
+<!--            file="dao_invoicing_bol.report_invoice_copy_sin"-->
+<!--        />-->
+
+        <!-- Adicionamos el TAG del reporte para libro de ventas IVA 
+        En este caso el MODEL es el reporte report_sales_iva_bol xq es un reporte con WIZARD
+        -->
+        <report 
+            id="dao_account_invoices_sale_iva_bol"
+            model="dao_invoicing_bol.report_sales_iva_bol"
+            string="Sales IVA"
+            report_type="qweb-pdf"
+            name="dao_invoicing_bol.report_sales_iva_bol"
+            file="dao_invoicing_bol.report_sales_iva_bol"
+        />
+
+
+        <!-- Declaramos el PAPEL para el reporte de Libro de ventas IVA
+        Se usara la hoja Oficio o Legal y en Landscape
+        -->
+        <record id="dao_report_qweb_paperformat_sale_iva" model="report.paperformat">
+            <field name="name">DAO Sales IVA Legal Landscape</field>
+            <field name="default" eval="True"/>
+            <!-- Si quisieramos podemos usar el format custom y especificar un size de papel
+            <field name="format">custom</field> 
+            <field name="page_height">297</field>
+            <field name="page_width">210</field>
+            o podemos usar uno de los select que tiene el model report.paperformat (ejem: Letter, Legal, A4, etc.)
+            -->
+            <field name="format">Legal</field>
+            <!-- <field name="orientation">Portrait</field> -->
+            <field name="orientation">Landscape</field>
+            <!-- Los margins se usa en mm como unidad -->
+            <field name="margin_top">12</field>
+            <field name="margin_bottom">8</field>
+            <field name="margin_left">5</field>
+            <field name="margin_right">5</field>
+            <field name="header_line" eval="False"/>
+            <field name="header_spacing">10</field>
+            <field name="dpi">110</field>
+        </record>
+
+        <!-- Establecemos el paper formar al reporte 
+        Para poder usar el paper format que queremos, debemos crear un record que tenga el mismo id del reporte
+        y colocarmo el field del paperformat_id con referencia al que creamos mas arriba
+        -->
+        <record id="dao_account_invoices_sale_iva_bol" model="ir.actions.report.xml">
+            <field name="paperformat_id" ref="dao_report_qweb_paperformat_sale_iva"/>
+        </record>
+
+    </data>
+</openerp>

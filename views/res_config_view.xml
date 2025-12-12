@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    	<!-- Extendemos el form view_account_config_settings de account.
+	    Adicionamos el attr de configuracion module_dao_invoicing_multi_dosificacion_bol
+	    -->
+	    <record id="dao_view_account_config_settings_extend" model="ir.ui.view">
+	        <field name="name">dao.view.account.config.settings.extend</field>
+	        <field name="model">account.config.settings</field>
+	        <field name="inherit_id" ref="account.view_account_config_settings"/>
+	        <field name="arch" type="xml">
+                <group name="accounting" position="after">
+                    <separator string="Bolivia Dosificación" groups="account.group_account_user"/>
+                    <group name="dao_dosificacion" groups="account.group_account_user">
+                        <field name="module_dao_invoicing_multi_dosificacion_bol" widget="radio"/>
+                    </group>
+                    <group string= "Date Invoice">
+                        <label string="Validacion de facturas posteriores"/>
+                        <div>
+                            <field name="dao_date_invoice_future" class="oe_inline" />
+                            <label for="dao_date_invoice_future"/>
+                        </div>
+                    </group>
+                    <group string= "Payments Cancel">
+                        <label string="Cancelacion de pagos mediante reversion"/>
+                        <div>
+                            <field name="dao_payments_cancel" class="oe_inline" />
+                            <label for="dao_payments_cancel"/>
+                        </div>
+                    </group>
+                </group>
+	        </field>
+	    </record>
+    </data>
+</openerp>

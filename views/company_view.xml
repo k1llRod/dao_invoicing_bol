@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+    	<!--
+        extension a res_company para adicionar los datos necesarios para que la company pueda emitir facturas segun la normativa Boliviana
+
+        A diferencia de odoo 9 en odoo 10 res_company ya no tiene el page de configuration
+        por tanto ya no existe el ref: account.view_company_inherit_form ahora se hace directamente el extend del base.view_company_form
+        -->
+<!--        <record id="dao_view_company_inherit_form_invoices" model="ir.ui.view">-->
+<!--            <field name="name">dao.res.company.inherit.form.invoices</field>-->
+<!--            <field name="model">res.company</field>-->
+<!--            <field name="inherit_id" ref="base.view_company_form"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <xpath expr="//label[@for='rml_header1']" position="before">-->
+<!--                    <label for="bol_nit" class="oe_edit_only"/>-->
+<!--                    <h1>-->
+<!--                        <field name="bol_nit" class="oe_inline"/>-->
+<!--                    </h1>-->
+<!--                </xpath>-->
+<!--                <xpath expr="//notebook/page" position="after">-->
+<!--                    <page string="Servicio de Impuestos Nacionales">-->
+<!--                        <group>-->
+<!--                            <group name="dao_invoicing_bol_config_grp" string="Invoicing">-->
+<!--                                <field name="bol_is_rts" />-->
+<!--                                <field name="bol_is_rtc" attrs="{'invisible': [('bol_is_rts', '=', True)]}" />-->
+<!--                                <field name="bol_rtc_title" attrs="{'invisible': [('bol_is_rtc', '=', False)], 'required': [('bol_is_rtc', '=', True)]}" />-->
+<!--                                <field name="bol_rtc_subtitle1" attrs="{'invisible': [('bol_is_rtc', '=', False)], 'required': [('bol_is_rtc', '=', True)]}" />-->
+<!--                                <field name="bol_rtc_subtitle2" attrs="{'invisible': [('bol_is_rtc', '=', False)]}" />-->
+<!--                                <field name="bol_receipt_title" />-->
+<!--                                <field name="bol_invoice_category" attrs="{'required': [('bol_is_rts', '=', False)]}" />-->
+<!--                                <field name="bol_invoice_auth_nro" attrs="{'required': [('bol_is_rts', '=', False)]}" />-->
+<!--                                <field name="bol_invoice_proportion_key" attrs="{'required': [('bol_is_rts', '=', False)]}"/>-->
+<!--                                <field name="bol_invoice_date_limit" attrs="{'required': [('bol_is_rts', '=', False)]}" />-->
+<!--                                <field name="bol_nombre_comercial" />-->
+<!--                                <field name="bol_razon_social" />-->
+<!--                                <field name="bol_entity_title" attrs="{'required': [('bol_is_rts', '=', False)]}"/>-->
+<!--                                <field name="bol_invoice_caption_1" />-->
+<!--                                <field name="bol_invoice_caption_2" />-->
+<!--                                <field name="bol_invoice_gasoline_percentage" attrs="{'required': [('bol_is_rts', '=', False)]}" />-->
+<!--                                <field name="seq_number"/>-->
+<!--                                <div>-->
+<!--                                    &lt;!&ndash; Colocamos entre porcentaje()d el nombre del action que sabemos que existe que abre el wizard para generar el codigo de control &ndash;&gt;-->
+<!--                                    <button name="%(action_dao_control_code_test)d" string="Test Code Control" type="action" class="btn-primary"/>-->
+<!--                                </div>-->
+<!--                                <div>-->
+<!--                                    &lt;!&ndash;Se crea un boton para el reseteo de numeracion de factura &ndash;&gt;-->
+<!--                                    <button name="%(action_dao_invoice_number_reset)d"-->
+<!--                                            string="Reset Numbering"-->
+<!--                                            type="action" class="btn-primary"-->
+<!--                                            attrs="{'invisible': [('bol_is_rts', '!=', False)]}"/>-->
+<!--                                </div>-->
+<!--                            </group>-->
+<!--                        </group>-->
+<!--                    </page>-->
+<!--                </xpath>-->
+<!--            </field>-->
+<!--        </record>-->
+    </data>
+</openerp>

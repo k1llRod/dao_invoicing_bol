@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <!--  una vez q estemos seguros de los datos colocamos el parametro noupdate=1-->
+	<data noupdate="1">
+    <!-- <data > -->
+    	<!--
+        Secuencia para manejar el nro. de factura segun el SIN, adicionaremos un padding rellenando con 0 a la izquierda de 6, la implementacion sera estandar, ya que es mas rapida, usa el concepto de secuencias de psotgres, se puede reiniciar o empezar secuencias en valores especificados por lo tanto pueden ocurrir saltos de numeros (GAPs), mientras que NO_GAP calcula en base a los valores de la BD que se tienen en la tabla, supuestamente no permite saltos, pero habria que ver que sucede si se modifica la secuencia desde odoo.
+        -->
+        <record id="seq_dao_invoicing_bol_number" model="ir.sequence">
+            <field name="name">Invoice Bolivia Number</field>
+            <field name="code">dao.invoicing.bol.number</field>
+            <field name="prefix"></field>
+            <field eval="1" name="number_next"/>
+            <field eval="1" name="number_increment"/>
+            <field eval="False" name="company_id"/>
+            <!-- <field eval="False" name="use_date_range"/> -->
+            <field name="padding">6</field>
+            <field name="implementation">no_gap</field>
+            <!-- <field name="implementation">standard</field> -->
+            
+        </record>
+        <!-- Fin del sequence para el nro de factura -->
+
+        <!-- 
+        Presicion de decimales para el codigo de control.
+        El SIN indica que a partir de 50 centavos va a su inmediato superior.
+        el ROUND(monto, 0) o ROUND(monto) hace esto, es decir 4.49 = 4 y 4.50 = 5
+        Creamos este decimal.precision para que sea configurable desde ODOO.
+        la Logica para generar el codigo de control igual depues trasforma el valor a entero, pero hay que tomar en cuenta que INT(4.5) es 4 , INT(4.96) es 4, INT(4.49) = 4, por tanto haciendo el ROUND en base a la precision que se establezca primero se obtiene el valor mas cercano para despues transformar a entero.
+        -->
+        <record forcecreate="True" id="decimal_bol_code_control" model="decimal.precision">
+            <field name="name">Bolivia Invoice Control Code</field>
+            <field name="digits">0</field>
+        </record>
+        <!-- Fin del decimal precision para el codigo de control -->
+
+        <!-- No insertamos en el TEMPLATE de CUENTAS ni TAXES pero podemos insertar directamente la cuenta en account.account y los impuestos como si el usuario los hubiera creado. -->
+
+        <!-- Cuenta ICE ahora tenemos en nuestro plan BO la cuenta dao_2101250010 -->
+        <!-- <record id="dao_account_234" model="account.account">
+            <field name="name">Deudas Fiscales / Impuesto Consumo Específico ICE a Pagar</field>
+            <field name="code">234000</field>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
+        </record> -->
+        <!-- FIN Cuenta ICE -->
+
+        <!-- TAXES Tags -->
+        <record id="dao_tag_bo_ice" model="account.account.tag">
+            <field name="name">Impuesto Consumo Especifico (ICE)</field>
+            <field name="applicability">taxes</field>
+        </record>
+
+        <record id="dao_tag_bo_ice_fijo" model="account.account.tag">
+            <field name="name">ICE Específico</field>
+            <field name="applicability">taxes</field>
+        </record>
+
+        <record id="dao_tag_bo_ice_porcentual" model="account.account.tag">
+            <field name="name">ICE Porcentual</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <!-- FIN TAXES Tags -->
+
+        <!-- TAXES -->
+        <!-- Segun resolucion rnd10-0041-11: usaremos por default la alicuota especifica o fija para bebidas alcoholicas mas general 2.64 y en porcentual la del 10%
+        Todos estos impuestos debe ser incluidos en el precio price_include = True ( y sobre el total del precio include_base_amount = False
+        -->
+        
+        <!-- Para los account.tax.template hay q adicionar la ref 'l10n_bo.bo_chart_template'
+        <field name="chart_template_id" ref="l10n_bo.bo_chart_template"/>
+        -->
+
+        <record id="dao_tax_ice_fijo" model="account.tax">
+            <field name="name">ICE Específico</field>
+            <field name="type_tax_use">sale</field>
+            <field name="amount_type">fixed</field>
+            <!-- <field name="account_id" ref="dao_account_234"/>
+            <field name="refund_account_id" ref="dao_account_234"/> -->
+            <!-- <field name="account_id" ref="l10n_bo.dao_2101250010"/>
+            <field name="refund_account_id" ref="l10n_bo.dao_2101250010"/> -->
+            <field name="amount">2.64</field>
+            <field name="tag_ids" eval="[(6,0,[ref('dao_tag_bo_ice_fijo')])]"/>
+            <field name="bol_ice" eval="True" />
+            <field name="price_include" eval="True" />
+            <field name="include_base_amount" eval="True" />
+        </record>
+
+        <record id="dao_tax_ice_porcentual" model="account.tax">
+            <field name="name">ICE Porcentual</field>
+            <field name="type_tax_use">sale</field>
+            <field name="amount_type">percent</field>
+            <!-- <field name="account_id" ref="dao_account_234"/>
+            <field name="refund_account_id" ref="dao_account_234"/> -->
+            <!-- <field name="account_id" ref="l10n_bo.dao_2101250010"/>
+            <field name="refund_account_id" ref="l10n_bo.dao_2101250010"/> -->
+            <field name="amount">10</field>
+            <field name="tag_ids" eval="[(6,0,[ref('dao_tag_bo_ice_porcentual')])]"/>
+            <field name="bol_ice" eval="True" />
+            <field name="price_include" eval="True" />
+            <field name="include_base_amount" eval="True" />
+        </record>
+
+        <record id="dao_tax_ice_group" model="account.tax">
+            <field name="name">Impuesto Consumo Específico</field>
+            <field name="type_tax_use">sale</field>
+            <field name="amount_type">group</field>
+            <field name="children_tax_ids"  eval="[(6,0,[ref('dao_tax_ice_fijo'),ref('dao_tax_ice_porcentual') ])]"/>
+            <field name="tag_ids" eval="[(6,0,[ref('dao_tag_bo_ice')])]"/>
+            <field name="amount">0</field>
+            <field name="bol_ice" eval="True" />
+            <field name="price_include" eval="True" />
+            <field name="include_base_amount" eval="False" />
+        </record>
+
+<!--        TODO: si se realizan cambios en esta plantilla se debe eliminar el registro y descomentar las siguientes 2 lineas y hacer el upgrade-->
+<!--    </data>-->
+<!--    <data noupdate="0">-->
+
+        <record id="email_template_edi_invoice_siat" model="mail.template">
+            <field name="name">Factura - enviar Email</field>
+            <field name="email_from">${(object.user_id.email and '%s &lt;%s&gt;' % (object.user_id.name, object.user_id.email) or '')|safe}</field>
+            <field name="subject">${object.company_id.name} Factura (Ref ${object.number or 'n/a'})</field>
+            <field name="partner_to">${object.partner_id.id}</field>
+            <field name="reply_to">${object.company_id.email}</field>
+            <field name="model_id" ref="account.model_account_invoice"/>
+            <field name="auto_delete" eval="True"/>
+            <field name="report_template" ref="dao_account_invoices_bol"/>
+            <field name="report_name">Invoice_${(object.number or '').replace('/','_')}_${object.state == 'draft' and 'draft' or ''}</field>
+            <field name="lang">${object.partner_id.lang}</field>
+            <field name="body_html"><![CDATA[
+<p>Estimad@(s) ${object.partner_id.name}
+% set access_action = object.get_access_action()
+% set access_url = access_action['type'] == 'ir.actions.act_url' and access_action['url'] or '/report/pdf/account.report_invoice/' + str(object.id)
+% set is_online = access_action and access_action['type'] == 'ir.actions.act_url'
+
+% if object.partner_id.parent_id:
+    (<i>${object.partner_id.parent_id.name}</i>)
+% endif
+,</p>
+<p>Adjunto, se encuentra su factura <strong>${object.siat_numero_factura}</strong> de la fecha <strong>${object.siat_fecha_emision[:10]}</strong>
+% if object.origin:
+(with reference: ${object.origin} )
+% endif
+por el importe de <strong>${object.amount_total} ${object.currency_id.name}</strong>
+por su compra en ${object.company_id.name}.
+</p>
+% if object.state=='paid':
+    <p>Esta factura ya se encuentra pagada.</p>
+% else:
+<!--    <p>Esta factura se encuentra pendiente de pago.</p>-->
+% endif
+<p>Gracias</p>
+% if object.user_id and object.user_id.signature:
+    ${object.user_id.signature | safe}
+% endif
+]]></field>
+        </record>
+
+<!--        </data>-->
+<!--    <data update="0">-->
+
+        <record id="email_template_invoice_siat_cancel" model="mail.template">
+            <field name="name">Anulacion Factura - enviar Email</field>
+            <field name="email_from">${(object.user_id.email and '%s &lt;%s&gt;' % (object.user_id.name, object.user_id.email) or '')|safe}</field>
+            <field name="subject">${object.company_id.name} Anulación de Factura (Ref ${object.number or 'n/a'})</field>
+            <field name="partner_to">${object.partner_id.id}</field>
+<!--            <field name="email_cc"-->
+            <field name="reply_to">${object.company_id.email}</field>
+            <field name="model_id" ref="account.model_account_invoice"/>
+            <field name="auto_delete" eval="True"/>
+            <field name="report_template" ref="dao_account_invoices_bol"/>
+            <field name="report_name">Invoice_${(object.number or '').replace('/','_')}_${object.state == 'draft' and 'draft' or ''}</field>
+            <field name="lang">${object.partner_id.lang}</field>
+            <field name="body_html"><![CDATA[
+            <p>Estimad@(s) ${object.partner_id.name}
+<!--            % set access_action = object.get_access_action()-->
+<!--            % set access_url = access_action['type'] == 'ir.actions.act_url' and access_action['url'] or '/report/pdf/account.report_invoice/' + str(object.id)-->
+<!--            % set is_online = access_action and access_action['type'] == 'ir.actions.act_url'-->
+
+            % if object.partner_id.parent_id:
+                (<i>${object.partner_id.parent_id.name}</i>)
+            % endif
+            ,</p>
+            <p>Comunicamos que se procedio con la anulacion de la factura <strong>${object.siat_numero_factura}</strong> de la fecha <strong>${object.siat_fecha_emision[:10]}</strong>
+            % if object.origin:
+            (with reference: ${object.origin} )
+            % endif
+            por el importe de <strong>${object.amount_total} ${object.currency_id.name}</strong>
+            por su compra en ${object.company_id.name}.
+            </p>
+            <p>Si cree que existe algún problema con esta factura, por favor comuníquese con nosotros, con todo gusto lo atenderemos.</p>
+            <p>Gracias</p>
+            % if object.user_id and object.user_id.signature:
+                ${object.user_id.signature | safe}
+            % endif
+            ]]></field>
+        </record>
+
+    </data>
+
+        <!-- FIN TAXES -->
+
+</openerp>

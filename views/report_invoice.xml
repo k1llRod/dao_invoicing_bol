@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<!--	<data>-->
+		<!-- Templera que se llama desde el ir.action report account_report.xml -->
+		<template id="report_invoice_sin">
+		    <t t-call="report.html_container">
+		    	<!-- Se hace un for each xq se puede imprimir varias facturas -->
+		        <t t-foreach="docs" t-as="o">
+		            <t t-call="dao_invoicing_bol.report_invoice_sin_document" t-lang="es_BO"/>
+		        </t>
+		    </t>
+		</template>
+
+		<!-- Templeta con el detalle de una factura con formato del SIN de Bolivia. -->
+		<!-- Ver report->static->src->css->report.css y web->static->lib->bootstrap->css->bootstrap.css para manejar class de estilos. -->
+		<!-- Usamor la funcion handler bol_format que tiene este reporte para formatear montos sin mostrar el simbolo de moneda ya que el widget monetary no permite esto. -->
+		<!-- no se puede usar widget (t-field-options) en items que no sea propiedades de un modelo, es decir t-field-options debe ser usado con t-field no con t-esc ni con valores como tal. -->
+		<template id="report_invoice_sin_document">
+			<!-- <t t-set="o" t-value="o.with_context({'lang':o.partner_id.lang})" /> -->
+			
+			<!-- Multicompany -->
+<!--		    <t t-if="not o and doc">-->
+<!--		        <t t-set="o" t-value="doc"/>-->
+<!--		    </t>-->
+<!--		    <t t-if="o and 'company_id' in o">-->
+<!--		        <t t-set="company" t-value="o.company_id"></t>-->
+<!--		    </t>-->
+<!--		    <t t-if="not o or not 'company_id' in o">-->
+<!--		        <t t-set="company" t-value="res_company"></t>-->
+<!--		    </t>-->
+
+		    <!-- El contexto sera en español de Bolivia siempre -->
+<!--			<t t-set="o" t-value="o.with_context({'lang':'es_BO'})"/>-->
+			<!-- PAGINA -->
+			<div class="page" style="font-size:10px;">
+				<!-- Borde de Factura -->
+				<div style="border: 1px solid black; padding: 10px 30px;">
+					<!-- Cabecera de la Factura -->
+					<div class="row mt0 mb8" style="padding-bottom: 10px;">
+						<!-- Dividimos la cabecera en 3 Columnas -->
+						<!-- Logo y Nombre Empresa -->
+						<div class="col-xs-3" style="font-size:8px;text-align:left;">
+							<div style="font-size:10px;text-align:left">
+					        	<img t-if="o['company_logo']" t-att-src="'data:image/png;base64,%s' % o['company_logo']" style="max-height: 70px;"/>
+					        </div>
+					        <!-- Imprimimos el nombre comercial de la empresa si esta llenado esta config.
+							caso contrario usar el nombre de la company
+							-->
+							<t t-if="siat_use_razon_social">
+								<div class="text-uppercase">
+									<span style="font-weight: bold;" t-esc="o['company_srs']"/>
+								</div>
+							</t>
+							<t t-if="not siat_use_razon_social">
+								<div class="text-uppercase">
+									<span style="font-weight: bold;" t-esc="o['company_name']"/>
+								</div>
+							</t>
+<!--					        <t t-if="company.siat_use_razon_social">-->
+<!--								<div class="text-uppercase" style="border: solid 1px #000;">-->
+<!--									<span style="font-weight: bold;" t-esc="company_srs" />-->
+<!--								</div>-->
+<!--					        </t>-->
+					        <t t-if="o['siat_entity_title']">
+								<div class="text-uppercase">
+									<span style="font-weight: bold;" t-esc="o['siat_entity_title']"/>
+								</div>
+					        </t>
+<!--							campo para el punto de venta-->
+<!--							<t t-if="o['codigo_punto_venta']">-->
+							<div style="font-weight: bold;">
+								No. Punto de Venta<t t-esc="' %s' % o['codigo_punto_venta']"/>
+							</div>
+<!--					        </t>-->
+
+					        <div id="address_invoice" class="text-uppercase">
+						        <p style="margin-bottom: 0 !important;" t-if="o['siat_direction']" t-esc="o['siat_direction']"/>
+						        <p style="margin-bottom: 0 !important;" t-if="o['company_phone']">
+						        	tel&#201;fono<t t-esc="': %s' % o['company_phone']"/>
+						        </p>
+						        <p style="margin-bottom: 0 !important;">
+						        	<t t-esc="'%s - %s' % (o['siat_municipality'], o['com_coun_name'])"/>
+						       	</p>
+						    </div>
+						</div>
+						<!-- Titulo FACTURA -->
+						<div id="title_invoice" class="col-xs-5" style="text-align:center; padding-top:60px;">
+							<!-- Verificamos si no es REGIMEN SIMPLIFICADO -->
+							<t t-if="not o['siat_channel_rts']">
+								<!-- Verificamos si es o no TASA CERO  -->
+								<h2>FACTURA</h2>
+								<div>
+									<p style="margin-bottom: 0 !important;">(CON DERECHO A CR&#201;DITO FISCAL)</p>
+								</div>
+								<t t-if="o['siat_status'] == 'ANULACION CONFIRMADA'">
+									<h4>ANULADO</h4>
+								</t>
+							</t>
+<!--							<t t-if="o.siat_invoice_channel.bol_is_rts">-->
+<!--								<p style="border: solid 1px #000;">-->
+<!--									&lt;!&ndash; company &ndash;&gt;-->
+<!--									<t t-if="o.siat_invoice_channel.bol_receipt_title">-->
+<!--										<h2><t t-esc="o.siat_invoice_channel.bol_receipt_title" /></h2><br />-->
+<!--									</t>-->
+<!--									<t t-if="not o.siat_invoice_channel.bol_receipt_title">-->
+<!--										<h2>RECIBO</h2><br />-->
+<!--									</t>-->
+
+<!--									<strong>NO V&#193;LIDO PARA CR&#201;DITO FISCAL</strong>-->
+<!--								</p>-->
+<!--							</t>-->
+						</div>
+						<!-- DATOS emision FACTURA empresa -->
+						<div class="col-xs-4" style="border: solid 1px #000;">
+							<div class="row mt0 mb0" style="border-bottom: solid 1px #e6e6e6;padding-bottom: 5px;padding-top: 7px;">
+								<div class="col-xs-6">
+			                        <span style="font-weight:bold;text-align:left">NIT:</span>
+			                    </div>
+			                    <div class="col-xs-6" style="text-align:center;">
+			                        <span t-esc="o['company_nit']"/>
+			                    </div>
+							</div>
+							<div class="row mt0 mb0" style="border-bottom: solid 1px #e6e6e6;padding-bottom: 5px;padding-top: 5px;">
+								<div class="col-xs-6">
+			                        <span style="font-weight:bold;text-align:left">FACTURA N°:</span>
+			                    </div>
+			                    <div class="col-xs-6" style="text-align:center;">
+			                        <span t-esc="o['siat_numero_factura']"/>
+			                    </div>
+							</div>
+							<div class="row mt0 mb0" style="padding-top: 5px;">
+								<div class="col-xs-12">
+			                        <span style="font-weight:bold;text-align:left">CÓD. AUTORIZACIÓN:</span>
+			                    </div>
+							</div>
+							<div class="row mt0 mb0" style="padding-bottom: 7px;">
+								<div class="col-xs-12">
+									<span t-esc="o['siat_cuf']"/>
+								</div>
+							</div>
+
+
+<!--							<table t-if="not o.siat_invoice_channel.bol_is_rts" class="table" style="border-collapse: separate !important; border: solid 1px #000;">-->
+<!--								<tbody>-->
+<!--									<tr style="border: solid 1px #000;">-->
+<!--										<td style="border: solid 1px #000;"><strong>NIT:</strong></td>-->
+<!--										<td style="border: solid 1px #000;"><span t-field="company.siat_nit" style="border: solid 1px #000;"/></td>-->
+<!--									</tr>-->
+<!--									<tr style="border: solid 1px #000;">-->
+<!--										<td style="border: solid 1px #000;"><strong>FACTURA N&#176;:</strong></td>-->
+<!--										<td style="border: solid 1px #000;"><span t-field="o.siat_numero_factura" style="border: solid 1px #000;"/></td>-->
+<!--									</tr>-->
+<!--									<tr style="border: solid 1px #000;">-->
+<!--										<td style="border: solid 1px #000;"><strong>C&#211;D AUTORIZACI&#211;N:</strong></td>-->
+<!--										<td style="border: solid 1px #000;">-->
+<!--											<span t-field="o.siat_cuf" style="border: solid 1px #000;"/>-->
+<!--										</td>-->
+<!--									</tr>-->
+<!--								</tbody>-->
+<!--							</table>-->
+<!--							<div>-->
+<!--								<h5 style="margin-bottom: 0px !important; text-align: center;">-->
+<!--									<t t-if="not copy">ORIGINAL</t>-->
+<!--									<t t-if="copy">COPIA</t>-->
+<!--								</h5>-->
+<!--&lt;!&ndash;								<p id="category" style="margin-bottom: 0px !important;" t-field="company.bol_invoice_category" />&ndash;&gt;-->
+<!--							</div>-->
+						</div>
+					</div>
+					<!-- Fecha Emision y datos cliente -->
+					<div style="text-transform: uppercase;">
+						<div class="row mt0 mb0">
+							<div class="col-xs-3" style="font-weight: bold;">Nombre/Raz&#243;n Social:</div>
+							<div class="col-xs-9">
+								<!-- Mostrar el Nombre si se tiene el customer o vendor del invoice -->
+								<span t-esc="o['siat_razon_social']"/>
+								<!-- caso contrario mostrar S/N -->
+<!--								<span t-if="not o.siat_nombre_razon_social">S&#8260;N</span>-->
+							</div>
+						</div>
+						<div class="row mt0 mb0">
+							<div class="col-xs-3" style="font-weight: bold;">Cod. Cliente:</div>
+							<div class="col-xs-4">
+								<!-- Mostrar el Nombre si se tiene el customer o vendor del invoice -->
+								<span t-esc="o['cod_cliente']"/>
+								<!-- caso contrario mostrar S/N -->
+<!--								<span t-if="not o.siat_nombre_razon_social">S&#8260;N</span>-->
+							</div>
+							<div class="col-xs-2" style="font-weight: bold;">Fecha:</div>
+							<div class="col-xs-3">
+								<span t-if="o['siat_fecha_emision']" t-esc="o['siat_fecha_emision']"/>
+							</div>
+						</div>
+						<div class="row mt0 mb0">
+							<div class="col-xs-3" style="font-weight: bold;">NIT/CI/CEX:</div>
+							<div class="col-xs-4">
+								<!-- Mostrar el NIT si se tiene del invoice-->
+								<span t-esc="o['siat_numero_documento']"/>
+								<!-- caso contrario mostrar 0 -->
+<!--								<span t-if="not o.partner_id.nit">0</span>-->
+							</div>
+							<t t-if="o['siat_complemento']">
+								<div class="col-xs-2" style="font-weight: bold;">Complemento:</div>
+								<div class="col-xs-3">
+									<!-- Mostrar el NIT si se tiene del invoice-->
+									<span t-esc="o['siat_complemento']"/>
+									<!-- caso contrario mostrar 0 -->
+	<!--								<span t-if="not o.partner_id.nit">0</span>-->
+								</div>
+							</t>
+						</div>
+						<t t-if="o['siat_cod_doc_sector'] == '11'">
+							<div class="row mt0 mb0">
+								<div class="col-xs-3" style="font-weight: bold;">Nombre Estudiante</div>
+								<div class="col-xs-4">
+									<span t-esc="o['siat_name_student']"/>
+								</div>
+									<div class="col-xs-2" style="font-weight: bold;">Periodo Facturado</div>
+									<div class="col-xs-3">
+										<span t-esc="o['siat_periodo_inv']"/>
+									</div>
+							</div>
+						</t>
+					</div>
+					<!-- Detalle de la Factura - Items -->
+					<table id="tb_invoice_detail" class="table" style="border-collapse: separate !important; border: solid 1px #000; margin-bottom:8px !important;">
+						<t t-call="dao_invoicing_bol.tb_invoice_detail_header"/>
+						<t t-call="dao_invoicing_bol.tb_invoice_detail_body"/>
+					</table>
+
+<!--					 Codigo de Control, Fecha Limite  y Codigo QR-->
+					<t t-if="not o['siat_channel_rts']">
+						<div style="float: left; width: 80%;">
+<!--							<div>-->
+<!--								<div class="col-xs-3" style="padding: 0 !important;">C&#211;DIGO DE CONTROL:</div>-->
+<!--								<div class="col-xs-9">-->
+<!--									<span t-if="o.bol_control_code and o.siat_bol_generated" t-field="o.bol_control_code" />-->
+<!--								</div>-->
+<!--							</div>-->
+<!--							<div>-->
+<!--								<div class="col-xs-3" style="padding: 0 !important;">FECHA L&#205;MITE DE EMISI&#211;N:</div>-->
+<!--								<div class="col-xs-9">-->
+<!--									<span t-if="o.bol_date_limit" t-field="o.bol_date_limit" t-field-options='{"widget": "date", "format": "dd/MM/yyyy"}' />-->
+<!--								</div>-->
+<!--							</div>-->
+							<!-- Leyendas de Facturas -->
+							<div style="margin-top:100px;">
+								<p class="text-uppercase" style="margin-bottom: 0 !important; text-align:center;font-weight: bold;" t-if="o['caption_1']" t-esc="o['caption_1']"/>
+								<p style="margin-bottom: 0 !important; text-align:center; font-size: 10px;" t-if="o['caption_2']" t-esc="o['caption_2']"/>
+								<t t-if="o['offline'] == '0'">
+									<p class="text-uppercase" style="margin-bottom: 0 !important; text-align:center;font-weight: bold;font-size: 10px;" t-if="o['caption_3']" t-esc="o['caption_3']"/>
+								</t>
+								<t t-else="1">
+									<p style="margin-bottom: 0 !important; text-align:center;font-weight: bold;font-size: 10px;" t-if="o['caption_4']" t-esc="o['caption_4']"/>
+								</t>
+<!--							parametrizar nueva leytenda-->
+							</div>
+						</div>
+						<div style="float: right; width: 20%;">
+							<div style="width:160px; margin:0 auto;">
+								<img t-if="o['siat_bol_code_qr']" style="width:150px; height: 150px; margin:0 auto;" t-att-src="'data:image/png;base64,%s' % o['siat_bol_code_qr']"/>
+							</div>
+						</div>
+						<div style="clear: both; height: 0px;"/>
+					</t>
+
+				<!-- FIN BORDE FACTURA -->
+				</div>
+			<!-- FIN PAGINA -->
+			</div>
+		</template>
+
+		<!-- Subtempletas para cabecera y cuerpo detalle de la factura, de esta manera se puede extender de manera mas facil en otros modulos -->
+		<!-- Sub Templeta para crear los titulos o cabeceras de la tabla detalle de la factura -->
+		<template id="tb_invoice_detail_header">
+			<thead style="text-align:center;">
+				<tr style="border-bottom: solid 1px #000;">
+					<td>C&#211;DIGO PRODUCTO</td>
+					<td>CANTIDAD</td>
+					<td>UNIDAD DE MEDIDA</td>
+					<td style="width:50%;">DESCRIPCI&#211;N</td>
+					<td>PRECIO UNITARIO</td>
+					<td>DESCUENTO</td>
+					<td>SUBTOTAL</td>
+				</tr>
+			</thead>
+		</template>
+		<template id="tb_invoice_detail_body">
+			<!-- como es llamado desde  report_invoice_sin_document asumimos que la variable 'o', 'company', etc estan cargadas establecemos el valor de baseImport para manejar el monto importe base si es que se tiene gasolina, usaremos la funcion bol_importe_base que tiene este reporte.-->
+			<!-- <t t-set="baseImport" t-value="bol_importe_base(o.id)"/> -->
+ 			<tbody>
+
+ 				<tr t-foreach="o['inv_lines']" t-as="l">
+					<td class="text-right"><span t-esc="l['siat_codigo_producto']"/></td>
+                    <td class="text-right">
+                    	<!-- Verificamos si debemos tratar la cantidad como enteros o no. -->
+                        <span t-esc="bol_qty_format(l['siat_cantidad'], l['siat_uom_id'], uom_unit_id)"/>
+                    	<!-- Mostramo el nombre del uom -->
+<!--                    	<span t-field="l.uom_id"  groups="product.group_uom"/>-->
+                    </td>
+					<td class="text-right">
+                    	<span t-esc="l['siat_uom_name']"/>
+					</td>
+
+                    <td><span t-esc="l['siat_name']"/></td>
+                    
+                    <td class="text-right">
+                        <span t-esc="bol_format(l['siat_price_unit'])"/>
+                    </td>
+
+					<td class="text-right">
+                        <span t-esc="bol_format(l['siat_discount'])"/>
+                    </td>
+
+                    <td class="text-right" style="padding-right: 23px !important;">
+                        <!-- Usaremos la funcion bol_format que tiene este reporte 
+                        y obtenemos el precio en base al precio unitario por cantidad, no los que maneja el item xq este comtempla impuestos y descuentos.
+                    	-->
+                        <span t-esc="bol_format(l['sub_total'])" />
+                    </td>
+                </tr>
+ 				<!-- Ahora adicionamos la parte de total -->
+				<!--  podemos contar o preguntar si es el ultimo item la cantidad de items a mostrar y adicionar el margin-top 0 o colocar uno mas alto-->
+ 				<tr style="">
+					<td colspan="7" style="border-top: solid 1px #000;">
+						<div>
+							<!-- <div class="col-xs-8">Son: VALOR LITERAL 00/100 Bolivianos</div> -->
+							<div class="col-xs-7">
+								<span t-esc="'Son: %s' % bol_amount_to_text(o['siat_amount_total'], o['siat_currency_id'])"  />
+							</div>
+<!--							<div class="col-xs-3 text-right">Total Descuento Lineas Bs.</div>-->
+<!--							<div class="col-xs-2 text-right">-->
+<!--								&lt;!&ndash; Usaremos la funcion bol_format que tiene este reporte &ndash;&gt;-->
+<!--								<span t-esc="bol_format(o['siat_bol_total_discount'])"/>-->
+<!--							</div>-->
+						</div>
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Sub Total Bs.</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<span t-esc="bol_format(o['siat_bol_sub_total'])"/>
+<!--								<span t-esc="bol_format(o['siat_bol_sub_total'])"/>-->
+							</div>
+						</div>
+
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Descuento Bs.</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<span t-esc="bol_format(o['siat_bol_global_discount'])"/>
+<!--								<span t-esc="bol_format(o['siat_bol_sub_total'])"/>-->
+							</div>
+						</div>
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Total Bs.</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<span t-esc="bol_format(o['amount_total'])" />
+							</div>
+						</div>
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Monto gift card Bs.</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<span t-esc="bol_format(o['siat_monto_gift_card'])" />
+							</div>
+						</div>
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Monto a pagar Bs.</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<!--<span t-esc="bol_format(o['amount_total'] - o['siat_monto_gift_card'])" />-->
+								<span t-esc="bol_format(o['siat_amount_total'])"/>
+							</div>
+						</div>
+						<div>
+							<div class="col-xs-7"></div>
+							<div class="col-xs-3 text-right">Importe base cr&#233;dito fiscal</div>
+							<div class="col-xs-2 text-right">
+								<!-- Usaremos la funcion bol_format que tiene este reporte -->
+								<!--<span t-esc="bol_format(o['amount_total'] - o['siat_monto_gift_card'])" />-->
+								<span t-esc="bol_format(o['siat_amount_total'])"/>
+							</div>
+						</div>
+					</td>
+				</tr>
+ 			</tbody>
+		</template>
+<!--	</data>-->
+</odoo>

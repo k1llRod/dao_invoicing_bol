@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!--<record id="dao_view_account_payment_from_invoices_multi_payment_inherit" model="ir.ui.view">-->
+            <!--<field name="name">dao.view.account.payment.from.invoices.multi.payment.inherit</field>-->
+            <!--<field name="model">account.register.payments</field>-->
+            <!--<field name="inherit_id" ref="account.view_account_payment_from_invoices "/>-->
+            <!--<field name="arch" type="xml">-->
+                <!--<xpath expr="//field[@name='amount']" position="after">-->
+                    <!--<field name="eachinvoicehaspayment"/>-->
+                    <!--<field name="useinvdateforpayment"/>-->
+                <!--</xpath>-->
+            <!--</field>-->
+        <!--</record>-->
+
+        <record id="dao_view_account_payment_from_invoices_multi_payment_inherit" model="ir.ui.view">
+            <field name="name">dao.view.account.payment.from.invoices.multi.payment.inherit</field>
+            <field name="model">account.register.payments</field>
+            <field name="inherit_id" ref="account.view_account_payment_from_invoices" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='amount']" position="after">
+                    <field name="eachinvoicehaspayment"/>
+                    <field name="useinvdateforpayment"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="dao_payment_cancel_form_inherit" model="ir.ui.view">
+            <field name="name">dao.payment.cancel.form.inherit</field>
+            <field name="model">account.payment</field>
+            <field name="inherit_id" ref="account_cancel.payment_cancel_form_inherit"/>
+            <field name="arch" type="xml">
+                <xpath expr="//button[@name='cancel']" position="replace">
+                    <button name="cancel" attrs="{'invisible': [('state', 'in', ('draft','dao_cancelled'))]}" string="Cancel" type="object"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

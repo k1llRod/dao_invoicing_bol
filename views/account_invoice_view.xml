@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="dao_siat_account_invoice_form_inherit" model="ir.ui.view">
+            <field name="name">dao.siat.account.invoice.form.inherit</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_form"/>
+                <field name="arch" type="xml">
+                    <xpath expr="//field[@name='date_invoice']" position="after">
+                        <field name="siat_bol_sale_type" attrs="{'readonly':[('state','!=', 'draft')]}" widget="radio"/>
+                    </xpath>
+                    <xpath expr="//field[@name='partner_id']" position="before">
+                        <field name="siat_name_student" groups="dao_invoicing_bol.group_edu_invisible"/>
+                        <field name="siat_periodo_inv" groups="dao_invoicing_bol.group_edu_invisible"/>
+                    </xpath>
+                    <xpath expr="//field[@name='payment_term_id']" position="after">
+                        <field name="siat_bol_partner_nit"/>
+                        <field name="siat_bol_partner_cpl"/>
+                        <field name="siat_bol_generated" invisible="1"/>
+                        <field name="siat_offline" invisible="1"/>
+                    </xpath>
+                    <xpath expr="//field[@name='date_invoice']" position="after">
+                        <field name="siat_invoice_channel" required="1"/>
+                    </xpath>
+                    <xpath expr="//field[@name='date_invoice']/parent::group" position="inside">
+                        <field name="siat_bol_code_qr" nolabel="1" widget='image' class="oe_avatar"/>
+<!--                               attrs="{'invisible':['|', ('state','!=','paid'), ('bol_is_rts','=',True), ('bol_generated','!=',True)]}" nolabel="1" widget='image' class="oe_avatar" />-->
+                    </xpath>
+                    <xpath expr="//button[@name='invoice_print']" position="after">
+                        <!--para que la logica de la notacion polaca se aplique correctamente en el atributo invisible.
+                        agregamos 2 '|' de esta manera se aplicara el or a las 3 sentencias-->
+                        <button name="action_force_generate_invoice_bol"
+                                type="object"
+                                attrs="{'invisible':['|',('state','!=','open'), ('siat_bol_generated','=',True)]}"
+                                class="oe_highlight"
+                                string="Force SIN Data"/>
+<!--                                groups="base.group_no_one"-->
+                        <button name="action_validate_invoice_siat"
+                                type="object"
+                                class="oe_highlight"
+                                attrs="{'invisible':[('siat_bol_generated','=',False)]}"
+                                string="Validar SIAT"/>
+                        <button name="open_wizard_cancel_invoice_siat"
+                                type="object"
+                                attrs="{'invisible':['|',('siat_bol_sale_type','!=','factura'),('state','in',['cancel','draft'])]}"
+                                class="oe_highlight"
+                                string="Cancelacion Siat"/>
+                    </xpath>
+                    <header position="inside">
+                        <button name="auth_siat_codigo_excepcion"
+                                type="object"
+                                attrs="{'invisible':['|',('state','!=','draft'),('siat_codigo_excepcion','=',True)]}"
+                                class="oe_highlight"
+                                string="Autorizar Excepcion Nit"/>
+
+                        <field name="siat_codigo_excepcion" invisible="1"/>
+                    </header>
+                    <xpath expr="//field[@name='amount_tax']" position="after">
+                        <field name="siat_monto_gift_card" widget='monetary'/>
+                    </xpath>
+
+                    <notebook position="inside">
+                        <!-- Campos de siat para tenerlos ocultos -->
+                        <page string="SIAT" groups="base.group_no_one">
+                            <group>
+                            <!-- TODO estos campos deben ir como readonly, para parcticas les quitamos esta propiedad -->
+                                <group col="4">
+                                    <field name="siat_cuf"/>
+                                    <field name="siat_numero_factura" widget="char"/>
+                                    <field name="siat_fecha_emision"/>
+                                    <field name="siat_codigo_sucursal"/>
+                                </group>
+                                <group col="4">
+                                    <field name="siat_codigo_metodo_pago"/>
+                                    <field name="siat_codigo_punto_venta"/>
+                                </group>
+                                <group col="4">
+                                    <field name="siat_monto_total_sujeto_iva"/>
+                                    <field name="siat_codigo_moneda"/>
+                                    <field name="siat_tipo_cambio"/>
+                                    <field name="siat_monto_total_moneda"/>
+<!--                                    <field name="siat_monto_gift_card"/>-->
+                                    <field name="siat_descuento_adicional"/>
+                                </group>
+                                <group col="4">
+                                    <field name="siat_codigo_documento_sector"/>
+                                    <field name="siat_date_time"/>
+                                </group>
+                                <group col="4">
+                                    <field name="siat_xml_file"/>
+                                    <field name="siat_status"/>
+                                    <field name="siat_codigo_recepcion"/>
+                                    <field name="siat_codigo_estado"/>
+                                    <field name="siat_numero_tarjeta"/>
+                                </group>
+                            </group>
+                            <group colspan="4">
+                                <field name="siat_cufd"/>
+                                <field name="siat_bol_qr_data" widget="url"/>
+                                <field name="siat_data_dict"/>
+                            </group>
+                        </page>
+                    </notebook>
+
+                    <xpath expr="//notebook/page[@name='other_info']/group/group[1]" position="after">
+                        <group String=" Factura Manual" attrs="{'invisible': [('siat_bol_sale_type', '!=', 'manual')]}">
+                            <field name="siat_cafc" attrs="{'readonly':['|', ('state','!=', 'draft')]}"/>
+                            <field name="siat_num_m" widget="char" attrs="{'readonly':['|', ('state','!=', 'draft')]}"/>
+                            <field name="siat_fecha_m" attrs="{'readonly':['|', ('state','!=', 'draft')]}"/>
+                        </group>
+                    </xpath>
+
+                </field>
+        </record>
+    </data>
+</openerp>
+
+<!--    &lt;!&ndash; Extension del view de account invoice para mostrar los datos generados para el SIN Bolivia.-->
+<!--    Solamente se muestran los datos si la factura tien estado paid q es cuando se generan estos datos.-->
+<!--    Tomar en cuenta que invoices generadas en el flujo de refund, no genera datos para el SIN de Bolivia.-->
+
+<!--    SI o SI debemos colocar el FIELD bol_is_rts pero oculto y solo lectura.-->
+<!--    Para poder usar despues en el DOMAIN FILTER del bol_code_qr.-->
+<!--    Caso contrario nos daria el error Unknown field bol_is_rts in domain-->
+
+<!--    No queremos mostrar una imagen, por ser widget, vacia xq las facturas de regimen simplificado no generan QR, etc.-->
+<!--    &ndash;&gt;-->
+
+<!--                    &lt;!&ndash;*******************picking&ndash;&gt;-->
+<!--                    <xpath expr="//header" position="inside">-->
+<!--                        <button name="action_stock_transfer" string="Transfer" type="object"  class="oe_highlight"-->
+<!--                             attrs="{'invisible':['|', '|', ('origin', '!=', False), ('state', '!=', 'open'), ('dao_picking_count', '!=', 0)]}"/>-->
+
+<!--                        &lt;!&ndash; Boton para cancelar facturas &ndash;&gt;-->
+<!--                        <button name="dao_cancel_invoice_cero" string="Force Cancellation" type="object"-->
+<!--                                attrs="{'invisible':[('dao_force_cancel_zero', '=', False)]}"-->
+<!--                                groups="account.group_account_invoice"/>-->
+<!--                        <field name="dao_force_cancel_zero" invisible="1"/>-->
+<!--                    </xpath>-->
+<!--                    <xpath expr="//header" position="after">-->
+<!--                        &lt;!&ndash;para poder mostrar una notificacion debajo del header igual al momento de romper conciliacion de una-->
+<!--                        factura usamos este codigo, en el class podemos usar distintos tipo de notificacion ya definicad por colores-->
+<!--                        en este caso definimos los colores desde el style del div y para mostrarlos usamos el campo dao_notify_state-->
+<!--                        que debe estar declarado y no visible&ndash;&gt;-->
+<!--                        <div class="alert alert-warning" role="alert" style="margin-bottom:0px;background-color:#FFFF00;border-color:#FFFF00;color:black" attrs="{'invisible':[('dao_notify_state','!=', '3')]}">-->
+<!--                            THE LIMIT DATE FOR ISSUANCE OF BILLS WILL EXPIRE SOON-->
+<!--                        </div>-->
+<!--                        <div class="alert alert-danger" role="alert" style="margin-bottom:0px;background-color:#FF4000;border-color:#FF4000;color:black" attrs="{'invisible':[('dao_notify_state','!=', '2')]}">-->
+<!--                            THE LIMIT DATE FOR ISSUANCE OF BILLS EXPIRES TODAY-->
+<!--                        </div>-->
+<!--                        <div class="alert alert-danger" role="alert" style="margin-bottom:0px;background-color:#FF0000;border-color:#FF0000;color:black" attrs="{'invisible':[('dao_notify_state','!=', '1')]}">-->
+<!--                            THE LIMIT DATE FOR ISSUANCE OF BILLS EXPIRED-->
+<!--                        </div>-->
+<!--                        <field name="dao_notify_state" invisible="1"/>-->
+<!--                    </xpath>-->
+
+<!--                    &lt;!&ndash;*****************&ndash;&gt;-->
+<!--                <xpath expr="//button[@name='invoice_print']" position="after">-->
+<!--                    &lt;!&ndash;para que la logica de la notacion polaca se aplique correctamente en el atributo invisible.-->
+<!--                    agregamos 2 '|' de esta manera se aplicara el or a las 3 sentencias&ndash;&gt;-->
+<!--                    <button name="action_force_generate_invoice_bol"-->
+<!--                            type="object"-->
+<!--                            attrs="{'invisible':['|','|',('bol_sale_type','!=','factura'),('bol_generated','=',True),('state', '!=', 'open')]}"-->
+<!--                            class="oe_highlight"-->
+<!--                            string="Force SIN Data"/>-->
+<!--                </xpath>-->
+<!--                <data>-->
+<!--                    <field name="payment_term_id" position="before">-->
+<!--                    <field name="bol_is_rts" attrs="{'invisible':1, 'readonly':1}"/>-->
+<!--                    <field name="bol_nit" attrs="{'invisible':[('state','!=','paid'),('bol_generated','!=',True)]}" />-->
+<!--                    <field name="bol_auth_nro" attrs="{'required':[('bol_sale_type', '==','manual')],'invisible':[('bol_sale_type','!=','manual'),('state', '=', 'draft'),('bol_generated','!=',True)],'readonly':[('state', '!=','draft')]}" />-->
+<!--                    <field name="bol_nro" attrs="{'required':[('bol_sale_type', 'in','manual')],'invisible':[('bol_sale_type','!=','manual'),('state', '=', 'draft'),('bol_generated','!=',True)],'readonly':[('state','!=','draft')]}"/>-->
+<!--                    <field name="bol_control_code" attrs="{'invisible':[('state','!=','paid'),('bol_generated','!=',True)]}" />-->
+<!--                    <field name="bol_generated" invisible="1"/>-->
+<!--                    </field>-->
+<!--                    <xpath expr="//field[@name='date_invoice']/parent::group" position="inside">-->
+<!--                        <field name="bol_code_qr" attrs="{'invisible':['|', ('state','!=','paid'), ('bol_is_rts','=',True), ('bol_generated','!=',True)]}" nolabel="1" widget='image' class="oe_avatar" />-->
+<!--                    </xpath>-->
+<!--                    &lt;!&ndash; <xpath expr="//field[@name='date_due']" position="after">-->
+<!--                        <field name="picking_transfer_id"/>-->
+<!--                    </xpath> &ndash;&gt;-->
+<!--                    <xpath expr="//field[@name='number']" position="before">-->
+<!--                        <div class="oe_button_box" name="button_box">-->
+<!--                            <button type="object"-->
+<!--                                name="action_view_picking" states="open,paid"-->
+<!--                                class="oe_stat_button" attrs="{'invisible':['|', ('origin', '!=', False), ('state', '!=', 'open')]}"-->
+<!--                                icon="fa-truck">-->
+<!--                                <field name="dao_picking_count"  string="Shipment" widget="statinfo"/>-->
+<!--                            </button>-->
+<!--                            &lt;!&ndash;<button type="object"&ndash;&gt;-->
+<!--                                &lt;!&ndash;name="action_view_picking_22" states="open,paid"&ndash;&gt;-->
+<!--                                &lt;!&ndash;class="oe_stat_button" attrs="{'invisible':['|', ('origin', '!=', False), ('state', '!=', 'open')]}"&ndash;&gt;-->
+<!--                                &lt;!&ndash;icon="fa-truck">&ndash;&gt;-->
+<!--                                &lt;!&ndash;<field name="dao_picking_count"  string="DAO Shipment" widget="statinfo"/>&ndash;&gt;-->
+<!--                            &lt;!&ndash;</button>&ndash;&gt;-->
+<!--                        </div>-->
+<!--                    </xpath>-->
+<!--            </data>-->
+<!--            </field>-->
+<!--        </record>-->
+<!--        &lt;!&ndash; Fin de extension account invoice view &ndash;&gt;-->
+
+<!--        &lt;!&ndash; Extendemos el SEARCH VIEW de las FACTURAS de VENTAS para que el GroupBy por fecha, no sea solo por mes, sino por día-->
+<!--        La extension nos basamos en sale->sale_view.xml[564] account_invoice_groupby_inherit-->
+<!--        &ndash;&gt;-->
+
+<!--        <record id="dao_view_account_invoice_filter_inherit" model="ir.ui.view">-->
+<!--            <field name="name">dao.view.account.invoice.filter.inherit</field>-->
+<!--            <field name="model">account.invoice</field>-->
+<!--            <field name="inherit_id" ref="account.view_account_invoice_filter"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                &lt;!&ndash; No se me ocurre como obtener el filter que tiene el string Invoice Date-->
+<!--                xq en Odoo 9 quitaron la opcion de buscar por @string-->
+<!--                  <xpath expr="//group/filter[@string='Invoice Date']" position="replace">-->
+<!--                      <filter string="Invoice Date" context="{'group_by':'date_invoice:day'}"/>-->
+<!--                  </xpath>-->
+<!--                Por tanto adicionaremos un nuevo filtro para permitir agrupar por fecha del invoice by day-->
+<!--                &ndash;&gt;-->
+<!--                <xpath expr="//group" position="inside">-->
+<!--                    <filter name="grpbyinvoiceday" string="Invoice Date By Day" context="{'group_by':'date_invoice:day'}"/>-->
+<!--                </xpath>-->
+<!--                &lt;!&ndash; ahora antes del tag group, estan los filtros para el search, adicionamos la posibilidad para buscar por nro. de factura, ya que el tag group es para groupby &ndash;&gt;-->
+<!--                <group position="before">-->
+<!--                    &lt;!&ndash; Basandonos en la busqueda por number (solo que este busca por number en invoice, en ref y en el partner_id, tomar en cuenta que como es un valor ilike aparece este filtro al ir colocando valores en el cuadro de texto.-->
+<!--                        <field name="number" string="Invoice" filter_domain="['|','|','|', ('number','ilike',self), ('origin','ilike',self), ('reference', 'ilike', self), ('partner_id', 'child_of', self)]"/>-->
+<!--                    &ndash;&gt;-->
+<!--                    <field name="bol_nro" string="Invoice Number" filter_domain="[('bol_nro','ilike',self)]"/>-->
+<!--                </group>-->
+<!--            </field>-->
+<!--        </record>-->
+<!--        <record id="dao_invoice_tree_inherit" model="ir.ui.view">-->
+<!--            <field name="name">dao.invoice.tree.inherit</field>-->
+<!--            <field name="model">account.invoice</field>-->
+<!--            <field name="inherit_id" ref="account.invoice_tree"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <xpath expr="//field[@name='number']" position="after">-->
+<!--                    <field name="bol_nro" string="Invoice Number"/>-->
+<!--                    <field name="bol_auth_nro" string="Authorization"/>-->
+<!--                </xpath>-->
+<!--            </field>-->
+<!--        </record>-->
+
+<!--    </data>-->
+<!--</openerp>-->

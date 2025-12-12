@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    	<!--
+        extension a res_partner para adicionar el NIT despues del nombre del partner
+        -->
+        <record id="view_partner_form_inherit_nit" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.nit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <field name="name" position="after">
+                    <br />
+                    <field name="nit" placeholder="NIT" context="{'default_supplier': supplier, 'default_customer': customer}"/>
+                    <br/>
+                    <field name="dao_cpl_personal" placeholder="Complemento"/>
+                    <br />
+                    <label string="Razon social" />
+<!--                           attrs="{'invisible':[('company_type','!=','company')]}"/>-->
+                    <field name="dao_uni_personal_flag"
+                           class="oe_inline"/>
+<!--                           attrs="{'invisible':[('company_type','!=','company')]}"-->
+                    <!--company-->
+                    <br />
+                    <field name="dao_uni_personal_name" placeholder="Business name"/>
+<!--                           attrs="{'required':[('dao_uni_personal_flag','==', True)]}"/>-->
+<!--                           , ('company_type','==','company'),'invisible':['|',('dao_uni_personal_flag','==', False),('company_type','!=','company')]}"/>-->
+                </field>
+
+                <!--<xpath expr="//field[@name='street']" position="before">-->
+                    <!--<field name="dao_uni_personal_flag"/>-->
+                <!--</xpath>-->
+            </field>
+        </record>
+    </data>
+</openerp>
