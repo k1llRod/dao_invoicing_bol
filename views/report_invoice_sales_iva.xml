@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<!-- Templera que se llama desde el ir.action report account_report.xml -->
+		<template id="report_invoice_sales_iva">
+		    <t t-call="report.html_container">
+		    	<!-- Seteamos variables para poder usar despues -->
+		    	<t t-set="company" t-value="res_company"></t>
+
+		    	<!-- No es necesario hacer un for each  t-foreach="docs" t-as="o" xq eso recorre todos los invoices, podemos usar el for each en detail, q contiene el detalle para el reporte y desde data saber los filtros del reporte-->
+		    	<!-- PAGINA -->
+				<div class="page" style="font-size:10px;">
+					<!-- Borde del Reporte-->
+					<div style="border: 1px solid black; padding: 10px 20px;">
+						<!-- Cabecera del reporte -->
+						<div class="row mt0 mb8">
+							<!-- Dividimos la cabecera en 2 Columnas -->
+							<!-- Logo y Nombre Empresa -->
+							<div class="col-xs-3" style="font-size:8px;">
+								<div>
+						        	<img t-if="company.logo" t-att-src="'data:image/png;base64,%s' % company.logo" style="max-height: 90px;"/>
+						        </div>
+						        <div class="text-uppercase">
+						        	<span style="font-weight: bold;" t-field="company.name" />
+						        </div>
+						        <div class="text-uppercase">
+							        <p style="margin-bottom: 0 !important;" t-if="company.street" t-field="company.street" />
+							        <p style="margin-bottom: 0 !important;" t-if="company.street2"  t-field="company.street2" />
+							        <p style="margin-bottom: 0 !important;" t-if="company.phone">
+							        	TEL&#201;FONO<t t-esc="': %s' % company.phone"  />
+							        </p>
+							        <p style="margin-bottom: 0 !important;">
+							        	<t t-esc="'%s - %s' % (company.city, company.country_id.name)"  />
+							       	</p>
+							    </div>
+							</div>
+							<!-- Titulo Reporte -->
+							<div class="col-xs-9" style="text-align:center; padding-top:60px">
+								<h2>REPORTE LIBRO DE VENTAS IVA</h2>
+							</div>
+							<!-- RANGO Fecha Reporte -->
+							<div style="text-transform: uppercase;">
+								<div class="row mt0 mb0">
+									<div class="col-xs-3">
+			                            <t t-if="data['form']['date_start']"><strong>Del:</strong> <span t-esc="data['form']['date_start']"/><br/></t>
+			                            <t t-if="data['form']['date_end']"><strong>Al :</strong> <span t-esc="data['form']['date_end']"/></t>
+			                        </div>
+									<!-- <div class="col-xs-10">
+										<span t-if="o.date_invoice and o.state == 'paid'" t-field="o.date_invoice" t-field-options='{"widget": "date", "format": "dd/MM/yyyy"}' />
+									</div> -->
+								</div>
+							</div>
+
+						</div>
+
+						<!-- Detalle del REPORTE - Items -->
+						<!-- Usamos el concepto de estilo de table de bootstrap -->
+						<!-- <table id="tb_invoice_detail" class="table" style="border-collapse: separate !important; border: solid 1px #000; margin-bottom:8px !important;"> -->
+						<table id="tb_invoice_detail" class="table" >
+							<t t-call="dao_invoicing_bol.tb_invoice_sale_iva_detail_header" />
+							<t t-call="dao_invoicing_bol.tb_invoice_sale_iva_detail_body" />
+						</table>
+
+				        
+				    </div>
+			    </div>
+		    </t>
+		</template>
+
+		<!-- Subtempletas para cabecera y cuerpo detalle del reporte, de esta manera se puede extender de manera mas facil en otros modulos.
+		Usamos el concepto de estilo de table de bootstrap
+		-->
+		<!-- Sub Templeta para crear los titulos o cabeceras de la tabla detalle del reporte -->
+		<template id="tb_invoice_sale_iva_detail_header">
+			<thead>
+				<tr>
+					<th style='vertical-align: top;'>N&#176;</th>
+					<th style='vertical-align: top;'>ESPECIFICACI&#211;N</th>
+					<th style='vertical-align: top;'>FECHA DE LA FACTURA</th>
+					<th style='vertical-align: top;'>N&#176; DE LA FACTURA</th>
+					<th style='vertical-align: top;'>C&#211;DIGO DE AUTORIZACI&#211;N</th>
+					<th style='vertical-align: top;'>NIT/CI CLIENTE</th>
+					<th style='vertical-align: top;'>COMPLEMENTO</th>
+					<th style='vertical-align: top;'>NOMBRE O RAZ&#211;N SOCIAL</th>
+					<th style='vertical-align: top;'>IMPORTE TOTAL DE LA VENTA</th>
+					<th style='vertical-align: top;'>IMPORTE ICE</th>
+					<th style='vertical-align: top;'>IMPORTE IEHD</th>
+					<th style='vertical-align: top;'>IMPORTE IPJ</th>
+					<th style='vertical-align: top;'>TASAS</th>
+					<th style='vertical-align: top;'>OTROS NOSUJETOS AL IVA</th>
+					<th style='vertical-align: top;'>EXPORTACIONES Y OPERACIONES EXENTAS</th>
+					<th style='vertical-align: top;'>VENTAS GRAVADAS A TASA CERO</th>
+					<th style='vertical-align: top;'>SUBTOTAL</th>
+					<th style='vertical-align: top;'>DESCUENTOS BONIFICACIONES Y REBAJAS SUJETAS AL IVA</th>
+					<th style='vertical-align: top;'>IMPORTE GIFT CARD</th>
+					<th style='vertical-align: top;'>IMPORTE BASE PARA D&#201;BITO FISCAL</th>
+					<th style='vertical-align: top;'>D&#201;BITO FISCAL</th>
+					<th style='vertical-align: top;'>ESTADO</th>
+					<th style='vertical-align: top;'>C&#211;DIGO DE CONTROL</th>
+					<th style='vertical-align: top;'>TIPO DE VENTA</th>
+				</tr>
+			</thead>
+		</template>
+		<!-- <span t-esc="bol_format(o.amount_total)" /> 
+			<span t-if="o.date_invoice and o.state == 'paid'" t-field="o.date_invoice" t-field-options='{"widget": "date", "format": "dd/MM/yyyy"}' />
+			<span t-if="invoice['date_invoice']" t-field="invoice['date_invoice']" t-field-options='{"widget": "date", "format": "dd/MM/yyyy"}' />
+		-->
+		<template id="tb_invoice_sale_iva_detail_body">
+			<tbody>
+			<t t-foreach="detail" t-as="invoice">
+				<tr>
+					<td>
+						<t t-esc="invoice['nro']" /> <!-- No -->
+					</td>
+					<td>
+						<t t-esc="invoice['bol_especificacion']" /> <!-- ESPECIFICACION -->
+					</td>
+					<td>
+						<t t-esc="bol_date_format(invoice['date_invoice'])" /> <!-- FECHA DE LA FACTURA -->
+					</td>
+					<td>
+						<t t-esc="invoice['siat_numero_factura']" /> <!-- No DE LA FACTURA -->
+					</td>
+					<td>
+						<t t-esc="invoice['siat_cuf']" /> <!-- CODIGO DE AUTORIZACION -->
+					</td>
+					<td>
+						<t t-esc="invoice['partner_nit']" /> <!-- NIT/CI CLIENTE -->
+					</td>
+					<td>
+						<t t-esc="invoice['partner_complement']" /> <!-- COMPLEMENTO -->
+					</td>
+					<td>
+						<t t-esc="invoice['partner_name']" /> <!-- NOMBRE O RAZON SOCIAL -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_amount'])" /> <!-- IMPORTE TOTAL DE LA VENTA -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_ice'])" /> <!-- IMPORTE ICE -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_ice'])" /> <!-- IMPORTE IEHD -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_ice'])" /> <!-- IMPORTE IPJ -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_ice'])" /> <!-- TASAS -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_ice'])" /> <!-- OTROS NO SUJETOS AL IVA -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice.get('bol_total_exemption', 0.0))"/> <!-- EXPORTACIONES Y OPERACIONES EXENTAS -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_tasa_cero'])" /> <!-- VENTAS GRAVADAS A TASA CERO -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['siat_bol_sub_total'])" /> <!-- SUBTOTAL -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_discount'])" /> <!-- DESCUENTOS BONIFICACIONES Y REBAJAS SUJETAS AL IVA -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['gift_card'])" /> <!-- IMPORTE GIFT CARD  -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['bol_total_base_import'])" /> <!-- IMPORTE BASE PARA DEBITO FISCAL -->
+					</td>
+					<td>
+						<t t-esc="bol_format(invoice['iva_amount'])" /> <!-- DEBITO FISCAL -->
+					</td>
+					<td>
+						<t t-esc="invoice['bol_state']" /> <!-- ESTADO -->
+					</td>
+					<td>
+						<t t-esc="invoice['bol_control_code']" /> <!-- CODIGO DE CONTROL -->
+					</td>
+					<td>
+						<t t-esc="invoice['es_gift']" /> <!-- TIPO DE VENTA -->
+					</td>
+				</tr>		            
+			</t>
+			<!-- Adicionamos TOTALES -->
+			<!-- <strong t-esc="sum_partner(data, o, 'debit - credit')" t-esc-options='{"widget": "monetary", "display_currency": "res_company.currency_id"}'/> -->
+			<!-- <t t-set="total" t-value="sum_totals(data)" /> -->
+			<!-- En lugar de ejecutar la funcion sum_totals(data) ahora usamos el valor que ya esta en la variable totals q es un diccinario igual al que retorna la funcion sum_totals. -->
+			<t t-set="total" t-value="totals" />
+				<tr>
+					<th scope="row" colspan="8" style="text-align:right;"><strong>Total</strong></th>
+					<td>
+						<t t-esc="bol_format(total['total_amount'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_ice'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_ice'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_ice'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_ice'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_ice'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_exemption'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_tasa_cero'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_subtotal'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_discount'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_gift_card'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_base'])" />
+					</td>
+					<td>
+						<t t-esc="bol_format(total['total_iva'])" />
+					</td>
+					<td colspan="2" />
+				</tr>
+			</tbody>
+		</template>
+	</data>
+</openerp>

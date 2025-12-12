@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="1">
+    	<!-- Basandonos en el modulo NATIVO PRODUCT: product_data  creamos uom para las botellas de 750ml y 500ml-->
+
+    	<!-- 750ml y 500ml son medidas que dependeran del  product_uom_litre que se crea con el modulo product.
+    	Pero no por ID de uom sino por ref de categoria de uom 'product_uom_categ_vol', donde litros es el uom de referencia base
+    	-->
+    	<!-- <record id="product_uom_litre" model="product.uom">
+            <field name="name">Liter(s)</field>
+            <field name="category_id" ref="product_uom_categ_vol"/>
+            <field name="factor">1.0</field>
+        </record> -->
+
+        <!-- 750ml: 1000ml es 1Litro por tanto el RATIO de conversion seria 1000/750 = 1.33333
+        Esto es distinto a sacar regla de 3 y decir que 750ml son 0.75 Litros [(750 * 1 ) / 1000]
+    	-->
+    	<record id="dao_product_uom_750ml" model="product.uom">
+            <field name="name">750 ml</field>
+            <!-- MUY Importante la ref a VOLUMEN: product_uom_categ_vol  -->
+            <field name="category_id" ref="product.product_uom_categ_vol"/>
+            <!-- 1000 ml / 750 ml = 1.33333333 -->
+            <field name="factor">1.33333333</field>
+            <!-- Es smaller a la referencia xq 750 ml es menor a 1000 ml que es un Litro -->
+            <field name="uom_type">smaller</field>
+            <!-- 2 Decimales -->
+            <field name="rounding">0.01</field>
+        </record>
+
+        <!-- 500 ml: 1000ml es 1Litro por tanto el RATIO de conversion seria 1000/500 = 2
+        Esto es distinto a sacar regla de 3 y decir que 500 ml son 0.50 Litros [(500 * 1 ) / 1000]
+    	-->
+    	<record id="dao_product_uom_500ml" model="product.uom">
+            <field name="name">500 ml</field>
+            <!-- MUY Importante la ref a VOLUMEN: product_uom_categ_vol  -->
+            <field name="category_id" ref="product.product_uom_categ_vol"/>
+            <!-- 1000 ml / 500 ml = 2.00 -->
+            <field name="factor">2.00</field>
+            <!-- Es smaller a la referencia xq 500 ml es menor a 1000 ml que es un Litro -->
+            <field name="uom_type">smaller</field>
+            <!-- 2 Decimales -->
+            <field name="rounding">0.01</field>
+        </record>
+    </data>
+</openerp>

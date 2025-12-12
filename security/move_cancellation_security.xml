@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="0">
+        <!--creamos un grupo para poder controlar quien podra realizaar cancelacion de asientos-->
+        <record id="dao_adv_acc_permissions" model="res.groups">
+            <field name="name">Permisos avanzados de contabilidad</field>
+        </record>
+        <record id="group_edu_invisible" model="res.groups">
+            <field name="name">Mostrar campos educativos</field>
+        </record>
+    </data>
+</openerp>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="dao_invoice_number_reset" model="ir.ui.view">
+            <field name="name">dao.invoice.number.reset</field>
+            <field name="model">dao.reset.numbering</field>
+            <field name="arch" type="xml">
+                <form>
+                    ¿Are you sure to reset the invoice numbering?
+                    <footer>
+                        <button name="reset_numbering_invoice" string="Reset number" type="object" default_focus="1" class="oe_highlight"/>
+                        or
+                        <button string="Cancel" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dao_invoice_number_reset" model="ir.actions.act_window">
+            <field name="name">Reset number sequence</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">dao.reset.numbering</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="dao_invoice_number_reset"/>
+            <field name="target">new</field>
+         </record>
+    </data>
+</openerp>

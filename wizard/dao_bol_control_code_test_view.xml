@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<!-- XML para tener el form WIZARD para generar el un Codigo de Control en base a valores del WIZARD
+
+	La accion para mostrar el WIZARD (para poder llamar desde un boton desde el form de configuracion del company).
+
+	Y por ultimo el Form VIew WIZARD con el resultado del Codigo de Control Generado.
+    -->
+
+    <!-- Adicionamos el VIEW para el WIZARD -->
+    <record id="dao_control_code_test_wizard_view" model="ir.ui.view">
+        <field name="name">Bolivia Control Code Generator</field>
+        <field name="model">dao.control.code.test.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Data Options">
+                <group col="2">
+                    <field name="invoice_date"/>
+                    <field name="client_nit"/>
+                    <field name="auth_nro" />
+                    <field name="invoice_nro"/>
+                    <field name="amount"/>
+                    <field name="proportion_key" />
+                </group>
+                <footer>
+                    <button name="generate_control_code" string="Generate" type="object" default_focus="1" class="oe_highlight"/>
+                    or 
+                    <button string="Cancel" class="oe_link" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Adicionamos el Action para poder usarla desde el boton desde el form de configuracioon de company -->
+    <record id="action_dao_control_code_test" model="ir.actions.act_window">
+        <field name="name">Control Code Test Generator</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">dao.control.code.test.wizard</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="dao_control_code_test_wizard_view"/>
+        <field name="target">new</field>
+    </record>
+
+
+    <!-- Adicionamos el View WIZARD para mostrar el codigo de control generado. 
+    Este WIZARD se lo llama cuando el usuario hace uso del wizard de arriba dao_control_code_test_wizard_view y presiona el boton generarar.
+    Es muy importante que el name se llame igual que el id, xq asi lo buscamos en la logica de 
+    wizard-> dao_bol_control_code_test.py -> def generate_control_code
+    el model es el mismo que el WIZARD de filtros 'dao.control.code.test.wizard'
+    -->
+    <record id="dao_control_code_test_wizard_done" model="ir.ui.view">
+        <field name="name">dao_control_code_test_wizard_done</field>
+        <field name="model">dao.control.code.test.wizard</field>
+        <field name="arch" type="xml">
+            <form string="CONTROL CODE GENERATED">
+                <group>
+                    <field name="control_code" />
+                </group>
+                <footer>
+                	<button special="cancel" string="Close" type="object" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

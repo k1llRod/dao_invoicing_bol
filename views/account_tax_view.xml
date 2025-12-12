@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+		<!-- Tax -->
+        <record id="dao_account_tax_form_inherit" model="ir.ui.view">
+        	<field name="name">dao.account.tax.form.inherit</field>
+    		<field name="model">account.tax</field>
+    		<field name="inherit_id" ref="account.view_tax_form"/>
+    		<field name="arch" type="xml">
+    			<data>
+    				<!-- en Odoo 9 no se puede usar @string en XPATH, lo quitaron -->
+    				<!-- <xpath expr="//notebook/page[@String='Definition']/group/group" position="inside"> -->
+    				<!-- Adicionamos el bol_ice y que solamente se vea cuando el amount_type de tax no sea group -->
+    				<xpath expr="/form/sheet[1]/notebook/page[1]/group[1]/group[1]" position="inside">
+			            <field name="bol_ice" attrs="{'invisible':[('amount_type','not in', ('fixed', 'percent', 'division'))]}"/>
+					</xpath>
+
+					<field name="refund_account_id" position="after">
+                        <field name="bol_is_for_discount"/>
+                        <field name="discount_account_id" attrs="{'invisible':[('bol_is_for_discount', '==', False)],
+                                                                  'required':[('bol_is_for_discount', '==', True)]}"/>
+                        <field name="discount_tax_account_id" attrs="{'invisible':[('bol_is_for_discount', '==', False)],
+                                                                  'required':[('bol_is_for_discount', '==', True)]}"/>
+                    </field>
+    			</data>
+    		</field>
+        </record>
+    	<!-- Fin de extension account tax view -->
+	</data>
+</openerp>
