@@ -39,9 +39,7 @@ SALE_TYPE = [('factura', 'Factura Online'),
 class AccountInvoice(models.Model):
     """
     """
-
     _inherit = 'account.invoice'
-
 
     bol_sale_type = fields.Selection(
         [('factura', 'Factura'), ('exportacion', 'Exportación')],
@@ -145,7 +143,14 @@ class AccountInvoice(models.Model):
     siat_codigo_emision = fields.Many2one('tipo.emision', string="Codigo emision", copy=False)
 
     siat_status = fields.Selection(SIAT_STATUS, string='Siat status', copy=False)
-    siat_codigo_recepcion = fields.Char(string='Codigo Estado', copy=False)
+    siat_state = fields.Selection([
+        ('draft', 'Borrador'),
+        ('offline', 'Offline'),
+        ('sent', 'Enviada'),
+        ('validated', 'Validada'),
+        ('rejected', 'Rechazada'),
+    ], default='draft')
+    siat_codigo_recepcion = fields.Char(string='Codigo Estado recepcion', copy=False)
     siat_codigo_estado = fields.Many2one('mensajes.servicios',string='Codigo Recepcion', copy=False)
 
     siat_codigo_sucursal = fields.Integer('Codigo Sucursal', copy=False)
@@ -472,10 +477,16 @@ class AccountInvoice(models.Model):
         para que primero valide que no existan duplicados
         :return:
         """
-        # Primero validamos que no se duplique la creacion de facturas ya existentes
+        # 1) validar duplicados (si tu metodo soporta multi, bien; si no, muévelo al loop)
         self.validate_before_open()
 
-        # Llamamos a la funcionalidad base
+        # 2) Generar/enviar SIAT por cada factura
+        for inv in self:
+            # Si quieres evitar SIAT para algunos tipos, filtra aquí
+            # if not inv.is_siat_invoice: continue
+            inv.action_siat_push_invoice(pago_code=False, numerotarjeta=False)
+
+        # 3) Llamamos funcionalidad base
         return super(AccountInvoice, self).action_invoice_open()
 
     #@api.multi
@@ -1332,6 +1343,35 @@ class AccountInvoice(models.Model):
     def get_invoice_data_dict(self):
         return ast.literal_eval(str(self.siat_data_dict)) if self.siat_data_dict else {}
 
+    def _get_event_for_offline(self, code):
+        """Busca un evento significativo coherente para la factura actual."""
+        evento_significativo = self.env['eventos.significativos']
+
+        domain = [
+            ('codigo_clasificador', '=', code)
+        ]
+
+        # Si el modelo tiene branch_code / selling_point_code, filtramos
+        if 'branch_code' in evento_significativo._fields:
+            domain.append(('branch_code', '=', self.siat_invoice_channel.branch_code))
+        if 'selling_point_code' in evento_significativo._fields:
+            domain.append(('selling_point_code', '=', self.siat_invoice_channel.selling_point_code))
+
+        # Opcional: filtrar por rango de fechas (si esos campos existen)
+        if 'date_start' in evento_significativo._fields:
+            domain.append(('date_start', '<=', fields.Datetime.now()))
+        if 'date_end' in evento_significativo._fields:
+            domain.append(('date_end', '>=', fields.Datetime.now()))
+
+        event = evento_significativo.search(domain, limit=1)
+        if not event:
+            raise ValidationError(
+                u"No se encontró un evento significativo válido para código %s. "
+                u"Configure un evento para esta compañía/sucursal/punto de venta."
+                % code
+            )
+        return event
+
     @api.multi
     def action_siat_push_invoice(self, pago_code, numerotarjeta):
         self.ensure_one()
@@ -1414,14 +1454,13 @@ class AccountInvoice(models.Model):
                     [('codigo_clasificador', '=', 2)],
                     limit=1
                 )
-                event_id = evento_significativo.search(
-                    [('codigo_clasificador', '=', 1)],
-                    limit=1
-                )
+                event_id = self._get_event_for_offline(1)
         # --- 6) Datos básicos SIAT ---
 
         self.siat_codigo_emision = tipo_emision
-        self.siat_numero_factura = self._get_next_invoice_number()
+        if self.siat_bol_sale_type != 'manual':
+            self.siat_numero_factura = self._get_next_invoice_number()
+
         code_pago = self.get_siat_payment_code(pago_code)
 
         # Solo obtener nuevo CUFD si es modo en línea
@@ -1492,9 +1531,15 @@ class AccountInvoice(models.Model):
                 _logger.error("Error enviando factura: %s", str(e))
                 raise
         else:
+            # OFFLINE
             self.siat_offline = True
             if event_id:
                 self.action_asing_event(event_id)
+            else:
+                # Si llegas aquí sin evento, algo está mal configurado
+                raise ValidationError(
+                    u"Factura en modo fuera de línea (tipo 2) pero sin evento significativo asignado."
+                )
 
         # --- 9) QR y correo ---
         self._bol_get_DATA_for_QR(
@@ -1504,8 +1549,6 @@ class AccountInvoice(models.Model):
         )
         self.siat_bol_generated = True
         self.action_send_email_siat()
-
-
 
 
 
@@ -2366,51 +2409,129 @@ class AccountInvoice(models.Model):
         return res
 
     def action_validate_invoice_siat(self):
-        company = self.company_id
-        channel = self.siat_invoice_channel
-        if self.siat_codigo_emision.codigo_clasificador == 2:
-            return self.env['siat.soap.base'].call_custom_wizard_response('FACTURA ' + self.display_name, 'ESTADO: REGISTRADA ' + self.siat_codigo_emision.descripcion)
-        obj = self.env['siat.servicio.facturacion']
-        res = obj.verificacion_estado_factura(company_id=company,
-                                               code_doc_sector=channel.type_doc_sector.codigo_clasificador,
-                                               code_emition=self.siat_codigo_emision.codigo_clasificador,  # TODO:talvez deberiamos de parametrizar
-                                               mode_constant=channel.mode_constant,
-                                               selling_point_code=channel.selling_point_code,
-                                               branch_code=channel.branch_code,
-                                               cufd=channel.cufd_code,
-                                               cuis=channel.cuis,
-                                               type_invo_doc=channel.type_factura.codigo_clasificador,
-                                               cuf=self.siat_cuf)
-        return self.env['siat.soap.base'].call_custom_wizard_response('Estado '+ str(res['codigoEstado']), str(res['codigoDescripcion']))
+        """
+                - Si la factura ya tiene código de recepción => consulta estado en el SIN.
+                - Si no tiene código de recepción, pero tiene XML y CUF => intenta reenviar.
+                """
+        for inv in self:
+            inv._validate_or_resend_single_siat_invoice()
 
     @api.multi
-    def action_invoice_sent(self):
-        """ Open a window to compose an email, with the edi invoice template
-            message loaded by default
-        """
+    def _validate_or_resend_single_siat_invoice(self):
         self.ensure_one()
-        template = self.env.ref('dao_invoicing_bol.email_template_edi_invoice_siat', False)
-        compose_form = self.env.ref('mail.email_compose_message_wizard_form', False)
-        ctx = dict(
-            default_model='account.invoice',
-            default_res_id=self.id,
-            default_use_template=bool(template),
-            default_template_id=template and template.id or False,
-            default_composition_mode='comment',
-            mark_invoice_as_sent=True,
-            custom_layout="dao_invoicing_bol.email_template_edi_invoice_siat"
+
+        if not self.siat_cuf:
+            raise ValidationError("La factura no tiene CUF, no se puede validar en el SIN.")
+
+        service = self.env['siat.servicio.facturacion']
+
+        # 1) Si ya hubo recepción previa (se intentó mandar)
+        if self.siat_codigo_recepcion:
+            res = service.validacion_recepcion_factura(
+                company_id=self.company_id,
+                cuis=self.siat_invoice_channel,
+                branch_code=self.siat_invoice_channel.branch_code,
+                code_doc_sector=self.siat_codigo_documento_sector,
+                code_emition=self.siat_codigo_emision.codigo_clasificador,
+                cuf=self.siat_cuf,
+                reception_code=self.siat_reception_code,
+            )
+
+            # Normalizar respuesta (dict u objeto)
+            if isinstance(res, dict):
+                trans_ok = res.get('transaccion', False)
+                estado = res.get('codigoEstado') or res.get('estadoFactura')
+                mensajes = res.get('mensajesList')
+            else:
+                trans_ok = getattr(res, 'transaccion', False)
+                estado = getattr(res, 'codigoEstado', None) or getattr(res, 'estadoFactura', None)
+                mensajes = getattr(res, 'mensajesList', None)
+
+            if trans_ok and str(estado) in ('690', '691', '908', 'FACTURA_VALIDADA'):
+                # códigos de ejemplo de factura válida, ajusta a los del SIN
+                self.write({'siat_validated': True, 'siat_offline': False})
+                raise ValidationError("La factura ya está registrada y válida en el SIN.")
+            else:
+                # Mostrar detalle del error
+                error_msg = 'Factura no validada en el SIN'
+                if isinstance(mensajes, list) and mensajes:
+                    first = mensajes[0]
+                    if isinstance(first, dict):
+                        error_msg = first.get('descripcion', error_msg)
+                    else:
+                        error_msg = getattr(first, 'descripcion', error_msg)
+                raise ValidationError("Validación en SIN: %s" % error_msg)
+
+        # 2) Si NO hay código de recepción, asumimos que nunca se registró → reenvío
+        if not self.siat_xml_file:
+            raise ValidationError("La factura no tiene XML generado, no se puede reenviar al SIN.")
+
+        # Reusar lógica de envío en línea, pero solo para esta factura
+        gzip_file = siat_tools.generate_file_gzip(self.siat_xml_file, str(self.number))
+        gzip_binary = base64.b64encode(gzip_file.getvalue())
+        hash_256 = siat_tools.action_generator_hash(self.siat_xml_file, 'hash_256')
+
+        send_date = self.siat_date_time or fields.Datetime.now()
+
+        # Normalizar fecha de envío a datetime
+        if isinstance(send_date, basestring):
+            # 1) quitar microsegundos si vienen
+            send_clean = send_date.split('.')[0]  # "2025-12-13T21:11:58"
+            # 2) unificar separador fecha/hora a espacio para Odoo
+            send_clean = send_clean.replace('T', ' ')  # "2025-12-13 21:11:58"
+            # 3) usar parser estándar de Odoo
+            dt = fields.Datetime.from_string(send_clean)
+        else:
+            dt = send_date
+
+        # FECHA DE ENVÍO: siempre AHORA en Bolivia para el reenvío
+        tz = pytz.timezone(self.env.user.tz or 'America/La_Paz')
+        dt_bol = datetime.now(tz)  # ahora mismo, en Bolivia
+
+        # Formato que el SIN acepta: ISO con milisegundos (3 decimales)
+        fecha_envio = dt_bol.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        code_emition = 1
+
+        res = service.recepcion_factura(
+            company_id=self.company_id,
+            archivo=gzip_binary,
+            hash_archivo=hash_256,
+            cuis=self.siat_invoice_channel,
+            send_date=fecha_envio,
+            code_doc_sector=self.siat_codigo_documento_sector,
+            code_emition=code_emition,
+            branch_code=self.siat_invoice_channel.branch_code,
+            type_invo_doc=str(self.siat_invoice_channel.type_factura.codigo_clasificador)
+            if hasattr(self.siat_invoice_channel.type_factura, 'codigo_clasificador')
+            else self.siat_invoice_channel.type_factura,
         )
-        return {
-            'name': _('Compose Email'),
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'res_model': 'mail.compose.message',
-            'views': [(compose_form.id, 'form')],
-            'view_id': compose_form.id,
-            'target': 'new',
-            'context': ctx,
-        }
+
+        # Normalizar respuesta (dict / objeto)
+        if isinstance(res, dict):
+            trans_ok = res.get('transaccion', False)
+            reception_code = res.get('codigoRecepcion')
+            mensajes = res.get('mensajesList')
+        else:
+            trans_ok = getattr(res, 'transaccion', False)
+            reception_code = getattr(res, 'codigoRecepcion', None)
+            mensajes = getattr(res, 'mensajesList', None)
+
+        if trans_ok:
+            # Guardar código de recepción y marcar como enviada
+            self.write({
+                'siat_reception_code': str(reception_code or ''),
+                'siat_offline': False,
+                'siat_validated': True,  # si tu criterio es: recepción OK = válido
+            })
+        else:
+            error_msg = 'El SIN no aceptó la factura.'
+            if isinstance(mensajes, list) and mensajes:
+                first = mensajes[0]
+                if isinstance(first, dict):
+                    error_msg = first.get('descripcion', error_msg)
+                else:
+                    error_msg = getattr(first, 'descripcion', error_msg)
+            raise ValidationError("Error reenviando factura al SIN: %s" % error_msg)
 
     def action_send_email_siat(self):
         self.ensure_one()
@@ -2831,3 +2952,4 @@ class AccountInvoiceLine(models.Model):
     def _constrains_price_unit(self):
         if self.price_unit < 0:
             raise ValidationError(_('No puede ingresar precios en negativo'))
+          

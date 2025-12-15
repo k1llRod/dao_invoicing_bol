@@ -62,6 +62,11 @@
                     <notebook position="inside">
                         <!-- Campos de siat para tenerlos ocultos -->
                         <page string="SIAT" groups="base.group_no_one">
+                            <header>
+                                <field name="siat_state"
+                                       widget="statusbar"
+                                       />
+                            </header>
                             <group>
                             <!-- TODO estos campos deben ir como readonly, para parcticas les quitamos esta propiedad -->
                                 <group col="4">
